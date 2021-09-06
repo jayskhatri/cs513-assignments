@@ -13,7 +13,7 @@ class AVL_Tree{
     void LeftBalance(AVL_Node *&);
     void RightBalance(AVL_Node *&);
     int insertHelper(AVL_Node *&, int, int &);
-    // int deleteHelper(AVL_Node *&, int, int &);
+    int deleteHelper(AVL_Node *&, int, int &);
     void printNode(AVL_Node*&, ofstream&);
     // void ConcaveTablePrintAVL(AVL_Node *&, int);
     // void inorderHelper(AVL_Node *&);

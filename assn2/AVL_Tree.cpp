@@ -20,6 +20,7 @@ AVL_Tree& AVL_Tree::operator=(const AVL_Tree &obj){
         destroyAVL(this->root);
         root = clone(obj.root);
     }
+    return *this;
 }
 
 //clone function to deep copy the tree
@@ -259,6 +260,7 @@ int AVL_Tree::insertHelper(AVL_Node*& root, int key, int &taller){
             }
         }
     }
+
     return true;
 }
 
@@ -266,10 +268,9 @@ int AVL_Tree::insertHelper(AVL_Node*& root, int key, int &taller){
 void AVL_Tree::AVL_Insert(int key){
     if(AVL_Search(key) == true){
         throw "Key already exists in the tree";
-        return;
     }else {
         int taller = 0;
-        cout<<"insertion: "<<insertHelper(root, key, taller)<<endl;
+        insertHelper(root, key, taller);
     }
 }
 
@@ -292,14 +293,6 @@ bool AVL_Tree::AVL_Search(int key){
     return false;
 }
 
-
-//     // if(AVL_Search(key) == false){
-//     //     cout << "The key is not in the tree" << endl;
-//     // }else {
-//     //     int shorter = 0;
-//     //     cout<<"ans: "<<deleteHelper(root, key, shorter)<<"\n";
-//     // }
-
 //link function gives the child node which side balancing is required 
 AVL_Node* AVL_Tree::link(AVL_Node *P, int a){
     return a == 1 ? P->LChild : P->RChild;
@@ -308,26 +301,30 @@ AVL_Node* AVL_Tree::link(AVL_Node *P, int a){
 void AVL_Tree::AVL_Delete(int key){
     AVL_Node *n = root; 
 	
-	// b -> AVL_Node to be balanced
-	// p -> parent of the AVL_Node to be balanced
-	// c -> left/right child of the AVL_Node to be balanced
-	AVL_Node *b, *p, *c, *h = new AVL_Node(INT_MIN);
-    AVL_Node *t;
-    h->RChild = n;
+    // base case
+    if(n == NULL) throw "No element exists to be deleted";
+
+	// balance - AVL_Node to be balanced
+	// parent - parent of the AVL_Node to be balanced
+	// child - left/right child of the AVL_Node to be balanced
+    // d - dummy node to handle the rotation on root node
+
+	AVL_Node *balance, *parent, *child, *d = new AVL_Node(INT_MIN);
+    AVL_Node *t;//temporary node
+    d->RChild = n;
 	bool exists = false;
 
-	stack<AVL_Node*> path;
-	path.push(h);
+    stack<AVL_Node*> rootToNode;
+	rootToNode.push(d);
 
-	if(n == NULL) throw "No element exists to be deleted";
-
+    //finding node to be deleted and tracking path from root to node in rootToNode
 	while(n){
 		if(key > n->key){
-			path.push(n);
+			rootToNode.push(n);
 			n = n->RChild;
 		}
         else if(key < n->key){
-			path.push(n);
+			rootToNode.push(n);
 			n = n->LChild;
 		}
 		else if(n->key == key){
@@ -335,42 +332,26 @@ void AVL_Tree::AVL_Delete(int key){
 			break;
 		}
 	}
-	if(!exists) throw "Element to be deleted does not exist";
-	else{
-		// if p has a single child or no child (leaf)
-		if(!n->LChild || !n->RChild){
-			AVL_Node *temp = n->LChild ? n->LChild : n->RChild;
-			AVL_Node *par = path.top();
-
-			if(!temp){
-				temp = n;
-				if(n == par->LChild)
-					par->LChild = nullptr;
-				else par->RChild = nullptr;
-				n = nullptr;
-			}
-			else{
-				n->key = temp->key;
-				n->bf = temp->bf;
-				n->LChild = temp->LChild;
-				n->RChild = temp->RChild;
-			}
-			delete temp;
-		}
+    //if node with given key does not exists
+	if(!exists) delete d, throw "Element to be deleted does not exist";
+	
+    else{
+		
 		// AVL_Node to be deleted has both the children
-		else{
-            path.push(n);
+		if(n->LChild && n->RChild){
+            rootToNode.push(n);
             AVL_Node *pred = n->LChild;
             while(pred->RChild){
-                path.push(pred);
+                rootToNode.push(pred);
                 pred = pred->RChild;
             }
 
             n->key = pred->key;
             key = pred->key;
             AVL_Node *temp = pred->RChild ? pred->RChild : pred->LChild;
-            AVL_Node *parent = path.top();
+            AVL_Node *parent = rootToNode.top();
 
+            //if pred has no child
             if(!temp){
                 temp = pred;
 
@@ -379,7 +360,10 @@ void AVL_Tree::AVL_Delete(int key){
                 else parent->RChild = nullptr;
 
                 pred = nullptr;
-            }else {
+            }
+            
+            //if pred has one child
+            else {
                 pred->key = temp->key;
                 pred->LChild = temp->LChild;
                 pred->RChild = temp->RChild;
@@ -387,189 +371,125 @@ void AVL_Tree::AVL_Delete(int key){
             }
             
             delete temp;
+		}
+        // if parent has a single child or no child (leaf)
+		if(!n->LChild || !n->RChild){
+			AVL_Node *temp = n->LChild ? n->LChild : n->RChild;
+			AVL_Node *par = rootToNode.top();
+            
+            //if n has no child
+			if(!temp){
+				temp = n;
+                
+                //incase the root itself is being deleted
+                if(d == rootToNode.top()) this->root = nullptr;
 
-            //----> n is not being deleted
-			// path.push(n);
-			// AVL_Node *succ = n->RChild; //finding the successor of n
-			// while(succ->LChild){
-			// 	path.push(succ);
-			//  	succ = succ->LChild;
-			// }
-			// n->key = succ->key;
-			// key = succ->key; // because the AVL_Node that is being deleted is the successor
-			// AVL_Node *temp = succ->LChild ? succ->LChild : succ->RChild;
-			// AVL_Node *par = path.top();
+				if(n == par->LChild)
+					par->LChild = nullptr;
+				else par->RChild = nullptr;
+				n = nullptr;
+			}
 
-			// if(!temp){
-			// 	temp = succ;
-			// 	if(succ == par->LChild)
-			// 		par->LChild = nullptr;
-			// 	else par->RChild = nullptr;
-			// 	succ = nullptr;
-			// }
-			// else{
-			// 	succ->key = temp->key;
-			// 	succ->bf = temp->bf;
-			// 	succ->LChild = temp->LChild;
-			// 	succ->RChild = temp->RChild;
-			// }
-			// delete temp;
+            //if n has only one child
+			else{
+				n->key = temp->key;
+				n->bf = temp->bf;
+				n->LChild = temp->LChild;
+				n->RChild = temp->RChild;
+			}
+			delete temp;
 		}
 	}
 
-	while(path.top() != h){
-		b = path.top();
-		int a = key < b->key ? 1 : -1;
-		path.pop();
-		p = path.top();
+    //processing the path from root to node and balancing the tree
+	while(rootToNode.top() != d){
+		balance = rootToNode.top();
+		rootToNode.pop();
+		parent = rootToNode.top();
 
-        // cout<<"b->bf: "<<b->bf << " p->bf: "<<p->bf<<" a: "<<a<<"\n";
-		if(b->bf == a){
-            // cout<<"1 if: b->bf: "<<b->bf<<" a: "<<a<<"\n";
-            c = link(b, b->bf);
-            if(c)
-                if(c->bf == -1 || c->bf == 1)
-                    b->bf = a;
-                else b->bf = 0;
-            else b->bf = 0;
+        int a = key < balance->key ? 1 : -1;
+
+		if(balance->bf == a){
+            child = link(balance, balance->bf);
+            if(child)
+                if(child->bf == -1 || child->bf == 1)
+                    balance->bf = a;
+                else balance->bf = 0;
+            else balance->bf = 0;
 			continue;
 		}
-		else if(b->bf == 0){
-            // cout<<"2 if: b->bf: "<<b->bf<<" a: 0"<<"\n";
-			b->bf = -1*a;
+		else if(balance->bf == 0){
+			balance->bf = -1*a;
+            delete d;
 			return;
 		}
 		else{
-            // cout<<"3 else: b->bf: "<<b->bf<<" a: "<<a<<"\n";
-			c = link(b, b->bf);
+			child = link(balance, balance->bf);
 			//single rotation
-			if(c->bf == -1*a){
-                // cout<<"3.1 if: c->bf: "<<c->bf<<" a: "<<a<<"\n";
+			if(child->bf == -1*a){
 				if(a == -1){
-                    // cout<<"3.1.1 if a: "<<a<<"\n";
-					n = c;
-                    t = b;
-                    // cout<<"rc->bf: "<<-1*a<<endl;
-                    R_Rotate(b);
-                    b = t;
-					b->bf = c->bf = 0;
+					n = child;
+                    //storing actual node
+                    t = balance;
+                    R_Rotate(balance);
+                    //restoring it
+                    balance = t;
+
+                    //updating balance factors
+					balance->bf = child->bf = 0;
 				}
 				else if(a == 1){
-                    // cout<<"3.1.2 if a: "<<a<<"\n";
-					n = c;
-                    t = b;
-                    // cout<<"lc->bf: "<<-1*a<<endl;
-                    L_Rotate(b);
-                    b = t;
-					b->bf = c->bf = 0;
+					n = child;
+                    //storing actual node
+                    t = balance;
+                    L_Rotate(balance);
+                    //restoring it
+                    balance = t;
+
+                    //updating balance factors
+					balance->bf = child->bf = 0;
 				}
 			}
 			//single rotation
-			else if(c->bf == 0){
-                // cout<<"3.2 if: c->bf: "<<c->bf<<" a: "<<a<<"\n";
+			else if(child->bf == 0){
 				if(a == -1){
-                    // cout<<"3.2.1 if a: "<<a<<"\n";
-					n = c;
-                    t = b;
-                    R_Rotate(b);
-                    b = t;
-                    // cout<<"0rc->bf: "<<0<<endl;
-					c->bf = a; 
+					n = child;
+                    t = balance;
+                    R_Rotate(balance);
+                    balance = t;
+					child->bf = a; 
 				}
 				else if(a == 1){
-                    // cout<<"3.2.2 if a: "<<a<<"\n";
-					n = c;
-                    t = b;
-                    L_Rotate(b);
-                    // cout<<"0lc->bf: "<<0<<endl;
-                    b = t;
-					c->bf = a;
+					n = child;
+                    t = balance;
+                    L_Rotate(balance);
+                    balance = t;
+					child->bf = a;
 				}
 			}
 			//double rotation
-			else if(c->bf == a){
-                // cout<<"3.3 if: c->bf: "<<c->bf<<" a: "<<a<<"\n";
+			else if(child->bf == a){
                 //LR rotation
 				if(a == -1){
-                    // cout<<"LR_Rotation\n";
-                    // cout<<"3.3.1 if a: "<<a<<"\n";
-					n = c->RChild;
-					// c->RChild = n->LChild;
-					// n->LChild = c;
-					// b->LChild = n->RChild;
-					// n->RChild = b;
-                    LeftBalance(b);
-                    // t = c;
-                    // cout<<"LRotation done ck: "<<c->key<<"\n";
-                    // L_Rotate(c);
-                    // c = t;
-                    // cout<<"LRotation done ck: "<<c->key<<"\n";
-                    // t = b;
-                    // cout<<"RRotation start bk: "<<b->key<<"\n";
-                    // R_Rotate(b);
-                    // b = t;
-                    // if(!n) cout<<"pakda gaya\n";
-                    // cout<<"RRotation done bk: "<<b->key<<"nk: "<<n->key <<"\n";
-                    // switch(n->bf){
-                    //     case 0:
-                    //         b->bf = 0;
-                    //         c->bf = 0;
-                    //         break;
-                    //     case 1:
-                    //         b->bf = -1;
-                    //         c->bf = 0;
-                    //         break;
-                    //     case -1:
-                    //         b->bf = -1;
-                    //         c->bf = 1;
-                    //         break;
-                    // }
-					// n->bf = 0;
-                    // cout<<"here\n";
+					n = child->RChild;
+                    LeftBalance(balance);
 				}
                 //RL rotation
 				else if(a == 1){
-                    // cout<<"RL_Rotation\n";
-                    // cout<<"3.3.2 if a: "<<a<<"\n";
-					n = c->LChild;
-                    t = b;
-                    RightBalance(b);
-                    b = t;
-					// c->LChild = n->RChild;
-					// n->RChild = c;
-					// b->RChild = n->LChild;
-					// n->LChild = b;
-					// b->bf = n->bf == 0 ? 0 : n->bf == 1 ? 0 : 1;
-					// c->bf = n->bf == 0 ? 0 : n->bf == 1 ? -1 : 0;
-					// n->bf = 0;
+                    n = child->LChild;
+                    t = balance;
+                    RightBalance(balance);
+                    balance = t;
 				}
 			}
 		}
         
-        if(b == p->RChild) p->RChild = n;
-        else p->LChild = n;	
+        if(balance == parent->RChild) parent->RChild = n;
+        else parent->LChild = n;	
 
-        if(p == h) root = n;
-        // cout<<"1\n";
-		// if(p!=h){
-        //     cout<<"2\n";
-        //     if(b == p->RChild) cout<<"3\n", p->RChild = n;
-        //     else p->LChild = n;	
-        // }
-        
-        // //incase root is part of rotation
-        // else {
-        //     cout<<"4\n";
-        //     if(b == p->RChild) {
-        //         cout<<"5\n";
-        //         p->RChild = n;
-        //     }else {
-        //         cout<<"6\n";
-        //         p->LChild = n;
-        //     }
-        //     root = n;
-        // }	
+        if(parent == d) root = n;
 	}
+    delete d;	
 }
 
 // writing the node to the file
@@ -613,12 +533,8 @@ void AVL_Tree::AVL_Print(const char* filename) {
     strcat(command, filename);
 	system(command);
 
-	#ifdef __unix__
-		system("display graph.png");
-
-	#elif _WIN32
+	#ifdef _WIN32
 		system(filename);
-
 	#endif
 
 	//removing the source (graph.gv) file

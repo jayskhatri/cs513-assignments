@@ -1,4 +1,4 @@
-#include "AVL_Tree.cpp"
+#include "AVL_Tree.h"
 #include<iostream>
 #include<fstream>
 
@@ -53,11 +53,12 @@ int main(){
                 break;
 
             case 0:
-                cout<<"exiting...";
+                tree.~AVL_Tree();
+                cout<<"exiting...\n";
                 exit(0);
 
             default:
-                cout<<"Please select valid option i.e. from 0-4.";
+                cout<<"Please select valid option i.e. from 0-4.\n";
                 break;
         }
     }while(choice!=0);
