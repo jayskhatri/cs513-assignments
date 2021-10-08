@@ -40,3 +40,5 @@ public:
     ~AVL_Tree(); 
 }; 
 ```
+
+## [Assignment 3](https://github.com/jayskhatri/cs513-assignments/tree/main/assn3): Treap + Theoritical and Empirical comparison between BST, AVL and Treap
