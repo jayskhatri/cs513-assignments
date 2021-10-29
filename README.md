@@ -42,3 +42,16 @@ public:
 ```
 
 ## [Assignment 3](https://github.com/jayskhatri/cs513-assignments/tree/main/assn3): Treap + Theoritical and Empirical comparison between BST, AVL and Treap
+
+
+## [Assignment 4](https://github.com/jayskhatri/cs513-assignments/tree/main/assn4): Graph and operations
+
+1) Performing DFS traversal on the graph and classifying all the edges (tree/forward/back/cross).
+
+2) Finding all strongly connected components using Tarjan’s algorithm.
+
+3) Creating another graph G’= (V, E’), where E’ is a subset of E, such that (a) G’ has the same strongly connected components as G, (b) G’ has the same component graph as G, and (c) E’ is as small as possible.
+
+4) Finding whether the graph is semiconnected or not.
+
+5) Dijkstra's algorithm
